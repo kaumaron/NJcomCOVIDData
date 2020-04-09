@@ -131,4 +131,6 @@ lambda_function/
 # PyCharm
 .idea/
 
+# old data
+output_data/
 
