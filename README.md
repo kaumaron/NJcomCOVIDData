@@ -45,7 +45,7 @@ data for a visualization analysis, or other use.
 Using Google Sheets and the import data function 
 (`=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/current-complete.csv")`), one
 can connect to Tableau to create an
-[interactive Viz](https://public.tableau.com/profile/andrew.k.decotiis.mauro#!/vizhome/COVID-19CasesinNJusingNJ_comData/Chloropleth-ZIP)
+[interactive Viz](https://public.tableau.com/profile/andrew.k.decotiis.mauro#!/vizhome/COVID-19CasesinNJusingNJ_comData/Choropleth-County)
 that stays up to date.
 
 ## Automation
