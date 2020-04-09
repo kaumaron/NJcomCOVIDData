@@ -24,8 +24,10 @@ It also zones for
 To explore this further take a look at the [USPS](https://tools.usps.com/zip-code-lookup.htm?citybyzipcode),
 ZIP Code lookup tool.
 
-For cities that have more than one ZIP like Newark, Camden, Edison, etc. I believe the
-default behavior is to take the first match, but I'm not sure.
+For cities that have more than one ZIP like Newark, Camden, Edison, etc. it appears the
+default behavior is to join the cases, deaths, and recoveries data to each of the ZIPs. 
+**This is a gotcha for aggregation**. You'd need to drop duplicate City, County and keep 
+first or last. *This is currently not handled in the ZIP aggregate output*.
 
 ## Output
 
@@ -63,4 +65,14 @@ I modified it to skip `index.html`.
 ## Additional Notes
 
 This repo can be used locally ([.ipynb](NJcomCOVIDExtract.ipynb) recommended) or as an AWS
-Lambda (when zipped with dependencies).
+Lambda (when zipped with dependencies). When used as a Lambda it's helpful to know that
+AWS is running a Linux variant so the `pandas` and `numpy` libraries will need to be for a
+Linux system. I'm running MacOS X so I needed to source my libraries from PyPi:
+
+* `pandas`(https://pypi.org/project/pandas/#files) - 
+`pandas-1.0.3-cp37-cp37m-manylinux1_x86_64.whl`
+* [`numpy`](https://pypi.org/project/numpy/#files) -
+ `numpy-1.18.2-cp37-cp37m-manylinux1_x86_64.whl`
+ 
+ This is laid out really well in [AWS Lambda with Pandas and NumPy](https://medium.com/@korniichuk/lambda-with-pandas-fd81aa2ff25e)
+ by [Ruslan Korniichuck](https://medium.com/@korniichuk).
