@@ -12,7 +12,11 @@ import boto3
 from botocore.exceptions import ClientError
 
 # constants
-TODAY = dt.datetime.now() + dt.timedelta(days=int(os.environ['days_delta']))
+if __name__ != '__main__':
+    days_diff = int(os.environ['days_delta'])
+else:
+    days_diff = 0
+TODAY = dt.datetime.now() + dt.timedelta(days=days_diff)
 MONTHDAYYEAR = "%m-%d-%Y"
 S3NAME = 'athenedyne-covid-19'
 
@@ -84,7 +88,7 @@ def lambda_handler(event, context):
             print(current_county)
         if town.match(p.text):
             town_name = town.match(p.text).group(1)
-            town_ct = int(town.match(p.text).group(2))
+            town_ct = int(town.match(p.text).group(2).replace(',', ''))
             death_ct = 0
             recovered_ct = 0
             if deaths.match(p.text):
@@ -155,8 +159,8 @@ def lambda_handler(event, context):
 
     # saves the list of missing ZIPs
     output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']]. \
-        to_csv(f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
-    upload_file(f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
+        to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+    upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
                 S3NAME,
                 f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
 
