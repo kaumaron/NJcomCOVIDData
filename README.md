@@ -3,7 +3,8 @@
 ## Functionality
 
 This code scrapes the data from [NJ.com](https://www.nj.com/coronavirus/2020/04/where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-april-8-2020.html)
-on a daily basis (12 PM EST). The data is parsed to extract the **City, County, Cases of
+on a daily basis (12 PM EST --> Pushed to 2 PM EST, 4/11/2020 published at 12:30 PM EST).
+The data is parsed to extract the **City, County, Cases of
 COVID-19, as well as any reported deaths and recoveries**. In my opinion the data set is 
 most likely not as robust and accurate as would be ideal.
 

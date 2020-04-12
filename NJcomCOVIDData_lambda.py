@@ -18,7 +18,7 @@ S3NAME = 'athenedyne-covid-19'
 
 # RegExs for extraction
 county = re.compile(r'^(\w*[\s\w]*)\sCOUNTY.*')
-town = re.compile(r'.\s?(\w*):\s(\d*).*')
+town = re.compile(r'.\s?([\w\s]*):\s(\d+\,\d+|\d+).*')
 deaths = re.compile(
     r'.*\w*:\s?.*(?:with)?\s(\d*)\s(?:death|fatalitie|fatality|who died)s?.*',
     re.IGNORECASE
@@ -127,7 +127,6 @@ def lambda_handler(event, context):
     output.groupby('Zip Code').sum().to_csv(
         f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
 
-
     # upload files to S3
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv',
                 S3NAME,
@@ -153,6 +152,13 @@ def lambda_handler(event, context):
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv',
                 S3NAME,
                 f'current-zips.csv')
+
+    # saves the list of missing ZIPs
+    output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']]. \
+        to_csv(f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+    upload_file(f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
+                S3NAME,
+                f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
 
 
 if __name__ == '__main__':
