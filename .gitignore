@@ -134,3 +134,4 @@ lambda_function/
 # old data
 output_data/
 
+.DS_Store
