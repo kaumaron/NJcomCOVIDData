@@ -147,34 +147,34 @@ def lambda_handler(event, context):
     cases_w_shared_zips.to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
     output[['Zip Code', 'City', 'Cases']].to_csv(
         f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv')
-    output.groupby('Zip Code').sum().to_csv(
-        f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
+    output.drop_duplicates(['City', 'County'], keep='first').groupby('Zip Code'). \
+        sum().to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
 
     # upload files to S3
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv',
                 S3NAME,
-                f'{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
+                f'Complete/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
 
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv',
                 S3NAME,
-                f'{TODAY.strftime(MONTHDAYYEAR)}-cases.csv')
+                f'Cases/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv')
 
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv',
                 S3NAME,
-                f'{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
+                f'ZIPs/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
 
     # duplicates as current-whatever.csv
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv',
                 S3NAME,
-                f'current-complete.csv')
+                f'Active/current-complete.csv')
 
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv',
                 S3NAME,
-                f'current-cases.csv')
+                f'Active/current-cases.csv')
 
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv',
                 S3NAME,
-                f'current-zips.csv')
+                f'Active/current-zips.csv')
 
     # saves the list of missing ZIPs
     if output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']].shape[0] > 0:
@@ -182,7 +182,7 @@ def lambda_handler(event, context):
             to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
         upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
             S3NAME,
-            f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+            f'MissingZIPs/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
 
 
 if __name__ == '__main__':
