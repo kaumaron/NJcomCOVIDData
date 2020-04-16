@@ -24,11 +24,11 @@ S3NAME = 'athenedyne-covid-19'
 county = re.compile(r'^(\w*[\s\w]*)\sCOUNTY.*')
 town = re.compile(r'.\s?([\w\s]*):\s(\d+\,\d+|\d+).*')
 deaths = re.compile(
-    r'.*\w*:\s?.*(?:with)?\s(\d*)\s(?:death|fatalitie|fatality|who died)s?.*',
+    r'.*\w*:\s?.*(?:with)?\s(\d+\,\d+|\d+)\s(?:death|fatalitie|fatality|who died)s?.*',
     re.IGNORECASE
 )
 recovered = re.compile(
-    r'.*(\d+)\s(?:cleared from quarantine|who recovered'\
+    r'.*(\d+\,\d+|\d+)\s(?:cleared from quarantine|who recovered'
     + r'|have recovered|recovered).*',
     re.IGNORECASE
 )
@@ -60,6 +60,7 @@ def upload_file(file_name, bucket, object_name=None, ExtraArgs = {'ACL': 'public
     except ClientError as e:
         logging.error(e)
         return False
+    print(f'{object_name} added to {bucket}.')
     return True
 
 
@@ -92,11 +93,11 @@ def lambda_handler(event, context):
             death_ct = 0
             recovered_ct = 0
             if deaths.match(p.text):
-                death_ct = deaths.match(p.text).group(1)
-                print(p.text)
+                death_ct = int(deaths.match(p.text).group(1).replace(',', ''))
+                print(p.text, death_ct)
             if recovered.match(p.text):
-                recovered_ct = recovered.match(p.text).group(1)
-                print(p.text)
+                recovered_ct = int(recovered.match(p.text).group(1).replace(',', ''))
+                print(p.text, recovered_ct)
             towns.append(
                 [current_county,
                  town_name,
@@ -110,22 +111,40 @@ def lambda_handler(event, context):
                          columns=['County', 'City', 'Cases',
                                   'Deaths', 'Recoveries']
                          )
+    print('\nTowns:\n')
     print(towns.head())
 
     # import ZIP list from S3
     zips = pd.read_csv(f's3://{S3NAME}/NJzips.csv',
                        converters={'Zip Code': str})
+    print('\nZIPs:\n')
     print(zips.head())
 
     # create DF with ZIP by joining on city and county
     output = towns.merge(zips, how='left', left_on=['City', 'County'],
                          right_on=['City', 'County'])
 
+    print('\nMerge:\n')
     print(output.head())
+
+    # determine ZIP count per town
+    shared_zips = output[['City', 'County', 'Cases']].groupby(
+        ['City', 'County']).count().rename(columns={'Cases': 'Shared ZIPs'})
+
+    # join shared ZIPs with output
+    cases_w_shared_zips = output.merge(shared_zips, how='left',
+                                       left_on=['City', 'County'],
+                                       right_on=['City', 'County'])
+
+    # determine average cases per town ZIP
+    cases_w_shared_zips['Adjusted Cases'] = round(
+        cases_w_shared_zips['Cases'] / cases_w_shared_zips['Shared ZIPs'], 1)
+    print('\nAdjusted by shared ZIP\n')
+    print(cases_w_shared_zips.head())
 
     # watch the /tmp/ folder if using local
     # Save CSVs so they can be uploaded
-    output.to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
+    cases_w_shared_zips.to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
     output[['Zip Code', 'City', 'Cases']].to_csv(
         f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv')
     output.groupby('Zip Code').sum().to_csv(
@@ -158,11 +177,12 @@ def lambda_handler(event, context):
                 f'current-zips.csv')
 
     # saves the list of missing ZIPs
-    output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']]. \
-        to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
-    upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
-                S3NAME,
-                f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+    if output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']].shape[0] > 0:
+        output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']]. \
+            to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+        upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
+            S3NAME,
+            f'{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
 
 
 if __name__ == '__main__':
