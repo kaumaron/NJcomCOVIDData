@@ -206,6 +206,29 @@ function getLinkLastmod(){
 </SCRIPT>
 	</head>
 	<body onLoad="getList();">
+
+	<h1>NJcomCOVIDData</h1>
+
+	<h2>Functionality</h2>
+		<p>
+		This code scrapes the data from <a href=""https://www.nj.com/coronavirus/2020/04/where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-april-16-2020.html" target="_blank">NJ.com</a>
+		on a daily basis (2 PM EST).
+		The data is parsed to extract the <strong>City, County, Cases of
+		COVID-19, as well as any reported deaths and recoveries</strong>>.
+		</p>
+		<p>
+			In my opinion the data set is
+			most likely not as robust and accurate as would be ideal. For example, counties have stopped
+			reporting city level data since this project was created, while other counties have never
+			provided a break down.
+		</p>
+
+	<h2>Generated Data</h2>
+	<p>
+		<strong>
+		The default organization is by name. Types of documents are contained in the same folder to keep them grouped.
+		</strong>
+	</p>
 		<div id="bucket_list">
 			<!--This is where we'll be displaying the products once they're loaded-->
 		</div>
