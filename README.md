@@ -6,7 +6,9 @@ This code scrapes the data from [NJ.com](https://www.nj.com/coronavirus/2020/04/
 on a daily basis (12 PM EST --> Pushed to 2 PM EST, 4/11/2020 published at 12:30 PM EST).
 The data is parsed to extract the **City, County, Cases of
 COVID-19, as well as any reported deaths and recoveries**. In my opinion the data set is 
-most likely not as robust and accurate as would be ideal.
+most likely not as robust and accurate as would be ideal. For example, counties have stopped
+reporting city level data since this project was created, while other counties have never
+provided a break down.
 
 ## Data
 The extracted data is then formatted and joined with a ZIP list using City and County to 
@@ -27,36 +29,47 @@ ZIP Code lookup tool.
 
 For cities that have more than one ZIP like Newark, Camden, Edison, etc. it appears the
 default behavior is to join the cases, deaths, and recoveries data to each of the ZIPs. 
-**This is a gotcha for aggregation**. You'd need to drop duplicate City, County and keep 
-first or last. *This is currently not handled in the ZIP aggregate output*.
+**This is a gotcha for aggregation**. The ZIP version of the output drops duplicate (City,
+County) tuples and keeps the first. The values are then safely summed to provide a total
+per ZIP. Additionally the complete CSVs use the number of ZIPs per (City, County) tuple 
+and the provide the Adjusted Cases by dividing Cases by Shared ZIPs.
 
 ## Output
 
-The data is then exported as three variants to an [AWS S3 Bucket](https://athenedyne-covid-19.s3.amazonaws.com/index.html).
+The data is then exported as three variants to an
+[AWS S3 Bucket](https://athenedyne-covid-19.s3.amazonaws.com/index.html)
+and they are sorted by Folder to keep each type together and sorted by date.
 The variants are: 
 
-1. `MM-DD-YYYY-complete.csv` has County, City, Cases, Deaths, Recoveries, Zip Code.
-2. `MM-DD-YYYY-cases.csv` has Zip Code, City, Cases.
-3. `MM-DD-YYYY-zips.csv` has Zip Code, Cases aggregate.
+1. `MM-DD-YYYY-complete.csv` has County, City, Cases, Deaths, Recoveries, Zip Code, Shared
+ZIPs, Adjusted Cases. These are in the `Complete` folder.
+2. `MM-DD-YYYY-cases.csv` has Zip Code, City, Cases. These are in the `Cases` folder.
+3. `MM-DD-YYYY-zips.csv` has Zip Code, Cases aggregate. These are in the `ZIPs` folder.
+4. `MM-DD-YYYY-missing-ZIPz.csv` has the empty Zip Code column, City, County. This is 
+only written if any ZIPs are missing from the master `NJzips.csv` file. These are in the 
+`MissingZIPs` folder.
 
-Additionally, the code in the [`.py`](NJcomCOVIDData_lambda.py) creates copies of the above
-variants starting with current. This allows bookmarking to the current file or using the 
-data for a visualization analysis, or other use.
+Additionally, the code in the [`.py`](NJcomCOVIDData_lambda.py) creates copies of the 
+above variants starting with current. This allows bookmarking to the current file or using
+the data for a visualization analysis, or other use. These are together in the `Active` 
+folder.
 
 Using Google Sheets and the import data function 
-(`=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/current-complete.csv")`), one
+(`=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/Active/current-complete.csv")`), one
 can connect to Tableau to create an
 [interactive Viz](https://public.tableau.com/profile/andrew.k.decotiis.mauro#!/vizhome/COVID-19CasesinNJusingNJ_comData/Choropleth-County)
 that stays up to date.
 
 ## Automation
 
-The Lambda script is set up on AWS Lambda to run at 12 PM EST daily, updating the S3 Bucket.
+The Lambda script is set up on AWS Lambda to run at 2 PM EST daily, updating the
+S3 Bucket. It was originally scheduled for Noon but the article is not necessarily ready
+in time.
 
 ## Additional Files
 
 The ZIPs were collected into `NJzips.csv` which is somewhat complete, as it may be missing
-ZIPs for towns that share ZIPs. It does contain ZIPs for towns on the page as of 04/06/2020.
+ZIPs for towns that share ZIPs. It does contain ZIPs for towns on the page as of 04/16/2020.
 
 The `index.html` file is from an answer on the
 [AWS forum](https://forums.aws.amazon.com/thread.jspa?threadID=66482) by J. Patel on 
