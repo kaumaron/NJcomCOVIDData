@@ -15,7 +15,7 @@ from botocore.exceptions import ClientError
 if __name__ != '__main__':
     days_diff = int(os.environ['days_delta'])
     fix_html = bool(os.environ['fix_html'])
-    regex = os.environ['regex']
+    regex = r'' + os.environ['regex_start'] + r'.*' + os.environ['regex_end']
 else:
     days_diff = -1
     fix_html = False
