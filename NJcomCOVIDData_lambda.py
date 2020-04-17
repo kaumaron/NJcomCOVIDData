@@ -14,8 +14,12 @@ from botocore.exceptions import ClientError
 # constants
 if __name__ != '__main__':
     days_diff = int(os.environ['days_delta'])
+    fix_html = bool(os.environ['fix_html'])
+    regex = os.environ['regex']
 else:
-    days_diff = 0
+    days_diff = -1
+    fix_html = False
+    regex = r'<div class="rawhtml".*\(\);'
 TODAY = dt.datetime.now() + dt.timedelta(days=days_diff)
 MONTHDAYYEAR = "%m-%d-%Y"
 S3NAME = 'athenedyne-covid-19'
@@ -38,6 +42,50 @@ url = f"https://www.nj.com/coronavirus/{TODAY.strftime('%Y')}/{TODAY.strftime('%
       f"where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-" + \
       f"{TODAY.strftime('%B').lower()}-{TODAY.strftime('%-d')}-" + \
       f"{TODAY.strftime('%Y')}.html"
+
+# Set url headers
+hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' +
+                     '(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
+
+# Function to open URL with error handling
+
+
+def open_url(url, hdr, fix_html=False, regex=r'<div class="rawhtml".*\(\);'):
+    if not fix_html:
+        try:
+            req = request.Request(url, headers=hdr)
+            html = bs(request.urlopen(url))
+            print(f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nSuccessfully opened {url}')
+        except HTTPError as e:
+            print(
+                f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
+            quit()
+        except URLError as e:
+            print(
+                f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
+            quit()
+    else:
+        try:
+            req = request.Request(url, headers=hdr)
+            response = request.urlopen(req)
+
+            html = bs(re.sub(
+                regex,
+                '',
+                response.read().decode('utf-8'))
+                )
+            print(
+                f'Date: {TODAY.strftime(MONTHDAYYEAR)}\n' +
+                f'Successfully opened {url} and repaired')
+        except HTTPError as e:
+            print(
+                f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
+            quit()
+        except URLError as e:
+            print(
+                f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
+            quit()
+    return html
 
 
 def upload_file(file_name, bucket, object_name=None, ExtraArgs = {'ACL': 'public-read'}):
@@ -66,16 +114,7 @@ def upload_file(file_name, bucket, object_name=None, ExtraArgs = {'ACL': 'public
 
 def lambda_handler(event, context):
     # attempt to load generated URL
-    try:
-        html = bs(request.urlopen(url))
-        print(f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nSuccessfully opened {url}')
-    except HTTPError as e:
-        print(f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
-        quit()
-    except URLError as e:
-        print(f'Date: {TODAY.strftime(MONTHDAYYEAR)}\nError trying to open {url}:\n{e}')
-        quit()
-
+    html = open_url(url, hdr, fix_html= fix_html, regex= regex)
     current_county = ''
     towns = []
 
@@ -83,7 +122,7 @@ def lambda_handler(event, context):
     # iterate over <p> to find the current county
     # then look for town names, deaths, recoveries
     # append to list
-    for p in html.findAll('p'):
+    for p in html.find_all('p', ['article__paragraph', 'article__paragraph--left']):
         if county.match(p.text):
             current_county = county.match(p.text).group(1).title()
             print(current_county)
@@ -144,11 +183,14 @@ def lambda_handler(event, context):
 
     # watch the /tmp/ folder if using local
     # Save CSVs so they can be uploaded
-    cases_w_shared_zips.to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv')
+    cases_w_shared_zips.to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv',
+                               index=False)
     output[['Zip Code', 'City', 'Cases']].to_csv(
-        f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv')
+        f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-cases.csv',
+        index=False)
     output.drop_duplicates(['City', 'County'], keep='first').groupby('Zip Code'). \
-        sum().to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv')
+        sum().to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-zips.csv',
+                     index=False)
 
     # upload files to S3
     upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-complete.csv',
@@ -179,10 +221,11 @@ def lambda_handler(event, context):
     # saves the list of missing ZIPs
     if output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']].shape[0] > 0:
         output[output['Zip Code'].isna()][['Zip Code', 'City', 'County']]. \
-            to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+            to_csv(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
+                   index=False)
         upload_file(f'/tmp/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv',
-            S3NAME,
-            f'MissingZIPs/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
+                    S3NAME,
+                    f'MissingZIPs/{TODAY.strftime(MONTHDAYYEAR)}-missing-ZIPs.csv')
 
 
 if __name__ == '__main__':
