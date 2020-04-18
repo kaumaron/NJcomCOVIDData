@@ -204,12 +204,55 @@ function getLinkLastmod(){
 
 
 </SCRIPT>
+
+<style>
+	@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap');
+	@import url('https://fonts.googleapis.com/css2?family=B612+Mono&display=swap');
+
+	body {
+		font-family: 'Lato', sans-serif;
+	}
+
+	pre,.code {
+		font-family: 'B612 Mono', monospace;
+		font-size: smaller;
+	}
+
+	h1 {
+		margin: 10px auto;
+		font-weight: 500;
+	}
+
+	h2 {
+		max-width: 90%;
+		margin: 10px auto;
+		font-weight: 500;
+	}
+
+	.text{
+		max-width: 80%;
+		margin: 0 auto;
+	}
+	
+	.footer {
+		margin: 20px 0px;
+	}
+
+	.tableauPlaceholder {
+		position: relative;
+		max-width: 60%;
+		margin: 20px auto;
+		border: 1px #000 solid;
+	}
+
+</style>
 	</head>
 	<body onLoad="getList();">
 
 	<h1>Project NJcomCOVIDData -- Extracting COVID-19 Case Counts from NJ.com</h1>
 
 	<h2>Functionality</h2>
+	<div class="text">
 		<p>
 		This code scrapes the data from <a href=""https://www.nj.com/coronavirus/2020/04/where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-april-16-2020.html" target="_blank">NJ.com</a>
 		on a daily basis (2 PM EST).
@@ -222,25 +265,145 @@ function getLinkLastmod(){
 			reporting city level data since this project was created, while other counties have never
 			provided a break down.
 		</p>
+	</div>
 
 	<h2>Generated Data</h2>
-	<p>
+	<div class="text">
 		<strong>
 		The default organization is by name. Types of documents are contained in the same folder to keep them grouped.
 		</strong>
-	</p>
+	</div>
+	<hr>
 		<div id="bucket_list">
 			<!--This is where we'll be displaying the products once they're loaded-->
 		</div>
-<BR>
-<SMALL>
-<PRE>
-Amazon S3 Bucket list v 1.1
-</PRE>
-</SMALL>
+	<hr>
 
+	<h2>Data</h2>
+	<div class="text">
+	<p>
+	The extracted data is then formatted and joined with a ZIP list using City and County to 
+	handle cities that share a name (i.e.,Franklin is a town in Sussex, Gloucester, Warren, 
+	Hunterdon and Somerset). The data is also aggregated by ZIP to deal with cities that share
+	ZIP Codes. For example, 08053 zones for Marlton (recommended) and Evesham (recognized).
+	It also zones for
 
+	<ul>
+		<li>EVESBORO NJ</li>
+		<li>EVESHAM TWP NJ</li>
+		<li>KRESSON NJ</li>
+		<li>MARLTON LAKES NJ</li>
+		<li>NORTH MARLTON NJ</li>
+		<li>PINE GROVE NJ</li>
+	</ul>
+	</p>
+	<p>
+	To explore this further take a look at the
+	<a href="https://tools.usps.com/zip-code-lookup.htm?citybyzipcode" target="_blank">USPS</a>,
+	ZIP Code lookup tool.
+	</p>
+	<p>
+	For cities that have more than one ZIP like Newark, Camden, Edison, etc. it appears the
+	default behavior is to join the cases, deaths, and recoveries data to each of the ZIPs. 
+	<strong>This is a gotcha for aggregation</strong>. The ZIP version of the output drops duplicate (City,
+	County) tuples and keeps the first. The values are then safely summed to provide a total
+	per ZIP. Additionally the complete CSVs use the number of ZIPs per (City, County) tuple 
+	and the provide the Adjusted Cases by dividing Cases by Shared ZIPs.
+	</p>
+	</div>
 
+	<h2>Output</h2>
+	<div class="text">
+	The data is then exported as three variants to an
+	<a href="https://athenedyne-covid-19.s3.amazonaws.com/index.html" target="_blank">AWS S3 Bucket</a>
+	and they are sorted by Folder to keep each type together and sorted by date.
+	The variants are: 
+
+	<ol>
+	<li><span class="code">MM-DD-YYYY-complete.csv</span> has County, City, Cases, Deaths, Recoveries, Zip Code, Shared
+	ZIPs, Adjusted Cases. These are in the <strong>Complete folder</strong>.</li>
+	<li><span class="code">MM-DD-YYYY-cases.csv</span> has Zip Code, City, Cases. These are in the <strong>Cases folder</strong>.</li>
+	<li><span class="code">MM-DD-YYYY-zips.csv</span> has Zip Code, Cases aggregate. These are in the <strong>ZIPs folder</strong>.</li>
+	<li><span class="code">MM-DD-YYYY-missing-ZIPz.csv</span> has the empty Zip Code column, City, County. This is 
+	only written if any ZIPs are missing from the master <span class="code">NJzips.csv</span> file. These are in the 
+	<strong>MissingZIPs folder</strong>.</li>
+	</ol>
+	<p>
+	Additionally, the code in the <a href="NJcomCOVIDData_lambda.py" target="_blank">.py</a> creates copies of the 
+	above variants starting with current. This allows bookmarking to the current file or using
+	the data for a visualization analysis, or other use. These are together in the <strong>Active folder</strong>.
+	</p>
+	<p>
+	Using Google Sheets and the import data function 
+	(<span class="code">=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/Active/current-complete.csv")</span>), one
+	can connect to Tableau to create an that stays up to date using:
+	</p>
+	</div>
+
+	<div class='tableauPlaceholder' id='viz1587183967431'>
+		<noscript>
+			<a href='#'><img alt=' ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CO&#47;COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County&#47;1_rss.png' style='border: none' /></a>
+		</noscript>
+		<object class='tableauViz'  style='display:none;'>
+			<param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+			<param name='embed_code_version' value='3' />
+			<param name='site_root' value='' />
+			<param name='name' value='COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County' />
+			<param name='tabs' value='yes' />
+			<param name='toolbar' value='yes' />
+			<param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CO&#47;COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County&#47;1.png' />
+			<param name='animate_transition' value='yes' />
+			<param name='display_static_image' value='yes' />
+			<param name='display_spinner' value='yes' />
+			<param name='display_overlay' value='yes' />
+			<param name='display_count' value='yes' />
+		</object>
+	</div>               
+	<script type='text/javascript'> 
+		var divElement = document.getElementById('viz1587183967431'); 
+		var vizElement = divElement.getElementsByTagName('object')[0];
+		vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+		var scriptElement = document.createElement('script');
+		scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+		vizElement.parentNode.insertBefore(scriptElement, vizElement);
+	</script>
+
+<h2>Automation</h2>
+<div class="text">
+	The Lambda script is set up on AWS Lambda to run at 2 PM EST daily, updating the
+	S3 Bucket. It was originally scheduled for Noon but the article is not necessarily ready
+	in time.
+</div>
+
+<h2>Additional Files</h2>
+<div class="text">
+The ZIPs were collected into NJzips.csv which is somewhat complete, as it may be missing
+ZIPs for towns that share ZIPs. It does contain ZIPs for towns on the page as of 04/16/2020.
+
+The basis of the index.html file (the one you're reading now) is from an answer on the
+<a href="https://forums.aws.amazon.com/thread.jspa?threadID=66482">AWS forum</a> by J. Patel on 
+5/3/2011. The pages uses JS to generate HTML text to list all of the files in the S3 bucket.
+I modified it to skip index.html.
+</div>
+
+<h2>Additional Notes</h2>
+<div class="text">
+This repo can be used locally <a href="NJcomCOVIDExtract.ipynb" target="_blank">.ipynb</a> recommended) or as an AWS
+Lambda (when zipped with dependencies). When used as a Lambda it's helpful to know that
+AWS is running a Linux variant so the pandas and numpy libraries will need to be for a
+Linux system. I'm running MacOS X so I needed to source my libraries from PyPi:
+
+<ul>
+<li><a href="https://pypi.org/project/pandas/#files" target="_blank">pandas</a> - <span class="code">pandas-1.0.3-cp37-cp37m-manylinux1_x86_64.whl</span></li>
+<li><a href="https://pypi.org/project/numpy/#files" target="_blank">numpy</a> - <span class="code">numpy-1.18.2-cp37-cp37m-manylinux1_x86_64.whl</span></li>
+ </ul>
+ 
+ This is laid out really well in <a href="https://medium.com/@korniichuk/lambda-with-pandas-fd81aa2ff25e" target="_blank">AWS Lambda with Pandas and NumPy</a>
+ by <a href="https://medium.com/@korniichuk" target="_blank">Ruslan Korniichuck</a>.
+</div>
+<div class="footer">
+	&nbsp;
+</div>
 	</body>
 </html>
 

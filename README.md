@@ -45,7 +45,7 @@ The variants are:
 ZIPs, Adjusted Cases. These are in the `Complete` folder.
 2. `MM-DD-YYYY-cases.csv` has Zip Code, City, Cases. These are in the `Cases` folder.
 3. `MM-DD-YYYY-zips.csv` has Zip Code, Cases aggregate. These are in the `ZIPs` folder.
-4. `MM-DD-YYYY-missing-ZIPz.csv` has the empty Zip Code column, City, County. This is 
+4. `MM-DD-YYYY-missing-ZIPs.csv` has the empty Zip Code column, City, County. This is 
 only written if any ZIPs are missing from the master `NJzips.csv` file. These are in the 
 `MissingZIPs` folder.
 
