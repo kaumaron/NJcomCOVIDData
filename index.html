@@ -226,7 +226,7 @@ function getLinkLastmod(){
 		padding: 20px
 	}
 
-	h2 {
+	h2, h3 {
 		font-weight: 500;
 		text-align: center;
 	}
@@ -251,6 +251,10 @@ function getLinkLastmod(){
 			overflow: auto;
 		}
 
+	.table_header {
+		font-weight: 700;
+	}
+
 	
 	/* Mobile sizes */
 		
@@ -264,7 +268,7 @@ function getLinkLastmod(){
 			}
 	
 		.tableauPlaceholder {
-			max-width: 80%;
+			max-width: 95%;
 		}
 
 		.text{
@@ -290,7 +294,7 @@ function getLinkLastmod(){
 		}
 
 		.tableauPlaceholder {
-			max-width: 60%;
+			max-width: 70%;
 		}
 
 		.text{
@@ -316,7 +320,7 @@ function getLinkLastmod(){
 	<h2>Functionality</h2>
 	<div class="text">
 		<p>
-		This code scrapes the data from <a href=""https://www.nj.com/coronavirus/2020/04/where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-april-16-2020.html" target="_blank">NJ.com</a>
+		This code scrapes the data from <a href="https://www.nj.com/coronavirus/2020/04/where-is-the-coronavirus-in-nj-latest-map-update-on-county-by-county-cases-april-16-2020.html" target="_blank">NJ.com</a>
 		on a daily basis (2 PM EST).
 		The data is parsed to extract the <strong>City, County, Cases of
 		COVID-19, as well as any reported deaths and recoveries</strong>.
@@ -332,12 +336,31 @@ function getLinkLastmod(){
 	<h2>Generated Data</h2>
 	<div class="text">
 		<strong>
-		The default organization is by name. Types of documents are contained in the same folder to keep them grouped.
+		The current day's data is below. Older files are in the <a href="#archive">Archive</a>.
 		</strong>
+		These files can be used as a constant reference to provide data to a Google Sheet with 
+		<span class="code">=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/Active/current-complete.csv")</span>.
+		There appears to be no equivalent Excel function.
 	</div>
 	
-		<div id="bucket_list" class="bucket_list">
-			<!--This is where we'll be displaying the products once they're loaded-->
+		<div id="active_list" class="bucket_list">
+			<table>
+				<tr class = "table_header">
+					<td width = 250px>File</td><td>Headers</td>
+				</tr>
+				<tr>
+					<td class = "code"><a href="Active/current-cases.csv">current-cases.csv</a></td>
+					<td>Zip Code, City, Cases</td>
+				</tr>
+				<tr>
+					<td class = "code"><a href="Active/current-complete.csv">current-complete.csv</a></td>
+					<td>County, City, Cases, Deaths, Recoveries, Zip Code, Shared ZIPs, Adjusted Cases</td>
+				</tr>
+				<tr>
+					<td class = "code"><a href="Active/current-zips.csv">current-zips.csv</a></td>
+					<td>Zip Code, Cases</td>
+				</tr>
+			</table>
 		</div>
 	
 
@@ -345,7 +368,7 @@ function getLinkLastmod(){
 	<div class="text">
 	<p>
 	The extracted data is then formatted and joined with a ZIP list using City and County to 
-	handle cities that share a name (i.e.,Franklin is a town in Sussex, Gloucester, Warren, 
+	handle cities that share a name (i.e., Franklin is a town in Sussex, Gloucester, Warren, 
 	Hunterdon and Somerset). The data is also aggregated by ZIP to deal with cities that share
 	ZIP Codes. For example, 08053 zones for Marlton (recommended) and Evesham (recognized).
 	It also zones for
@@ -386,7 +409,7 @@ function getLinkLastmod(){
 	ZIPs, Adjusted Cases. These are in the <strong>Complete folder</strong>.</li>
 	<li><span class="code">MM-DD-YYYY-cases.csv</span> has Zip Code, City, Cases. These are in the <strong>Cases folder</strong>.</li>
 	<li><span class="code">MM-DD-YYYY-zips.csv</span> has Zip Code, Cases aggregate. These are in the <strong>ZIPs folder</strong>.</li>
-	<li><span class="code">MM-DD-YYYY-missing-ZIPz.csv</span> has the empty Zip Code column, City, County. This is 
+	<li><span class="code">MM-DD-YYYY-missing-ZIPs.csv</span> has the empty Zip Code column, City, County. This is 
 	only written if any ZIPs are missing from the master <span class="code">NJzips.csv</span> file. These are in the 
 	<strong>MissingZIPs folder</strong>.</li>
 	</ol>
@@ -398,43 +421,88 @@ function getLinkLastmod(){
 	<p>
 	Using Google Sheets and the import data function 
 	(<span class="code">=IMPORTDATA("https://athenedyne-covid-19.s3.amazonaws.com/Active/current-complete.csv")</span>), one
-	can connect to Tableau to create an that stays up to date using:
+	can connect to Tableau to create an <a href="https://public.tableau.com/profile/andrew.k.decotiis.mauro#!/vizhome/COVID-19CasesinNJusingNJ_comData/Choropleth-County" target="">interactive viz</a> that stays up to date:
 	</p>
 	</div>
 
-	<div class='tableauPlaceholder' id='viz1587183967431'>
+	<h3 style="margin-top: -20px;">Interactive Tableau Map
+		<br>
+		<small>&emsp;This map contains multiple views accessible via the tabs.</small>
+	</h3>
+	<div class="text">
+		The main dashboard compares four different layouts:
+		<ul>
+			<li>A heat map</li>
+			<li>A county summary map</li>
+			<li>A ZIP map where ZIPs all have the same number of cases if a town is shared. E.g., Newark has 22 ZIP codes
+				and each ZIP code has the same number of cases. This better illustrates large cities as hot spots but overcounts
+				the total number of cases and hides other hotspots.
+			</li>
+			<li>A ZIP map where ZIPs evenly share number of cases if a town is shared. E.g., Newark has 22 ZIP codes
+				and each ZIP code has the total reported number of cases for Newark divided by 22.
+				This better illustrates smaller city hot spots (Lakewood, North Bergen, Passiac, Woodbridge) but does not overcount
+				the total number of cases.
+			</li>
+		</ul>
+	</div>
+
+	<div class='tableauPlaceholder' id='viz1587357055533' style='position: relative'>
 		<noscript>
-			<a href='#'><img alt=' ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CO&#47;COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County&#47;1_rss.png' style='border: none' /></a>
+			<a href='#'>
+				<img alt=' ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;PP&#47;PPWHHHDCR&#47;1_rss.png' style='border: none' />
+			</a>
 		</noscript>
 		<object class='tableauViz'  style='display:none;'>
 			<param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
 			<param name='embed_code_version' value='3' />
-			<param name='site_root' value='' />
-			<param name='name' value='COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County' />
-			<param name='tabs' value='yes' />
+			<param name='path' value='shared&#47;PPWHHHDCR' />
 			<param name='toolbar' value='yes' />
-			<param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CO&#47;COVID-19CasesinNJusingNJ_comData&#47;Choropleth-County&#47;1.png' />
+			<param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;PP&#47;PPWHHHDCR&#47;1.png' />
 			<param name='animate_transition' value='yes' />
 			<param name='display_static_image' value='yes' />
 			<param name='display_spinner' value='yes' />
 			<param name='display_overlay' value='yes' />
 			<param name='display_count' value='yes' />
+			<param name='filter' value='publish=yes' />
 		</object>
-	</div>               
-	<script type='text/javascript'> 
-		var divElement = document.getElementById('viz1587183967431'); 
+	</div>
+	<script type='text/javascript'>
+	    var divElement = document.getElementById('viz1587357055533');
 		var vizElement = divElement.getElementsByTagName('object')[0];
-		vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+		if ( divElement.offsetWidth > 800 ) {
+			vizElement.style.width='100%';
+			vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+			}
+		else if ( divElement.offsetWidth > 500 ) {
+			vizElement.style.width='100%';
+			vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+			}
+		else {
+			vizElement.style.width='100%';
+			vizElement.style.minHeight='1650px';
+			vizElement.style.maxHeight=(divElement.offsetWidth*1.77)+'px';
+			}
 		var scriptElement = document.createElement('script');
 		scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
 		vizElement.parentNode.insertBefore(scriptElement, vizElement);
 	</script>
+
 
 <h2>Automation</h2>
 <div class="text">
 	The Lambda script is set up on AWS Lambda to run at 2 PM EST daily, updating the
 	S3 Bucket. It was originally scheduled for Noon but the article is not necessarily ready
 	in time.
+</div>
+
+<h2>Archive</h2><a id="archive"></a>
+<div class="text">
+	<strong>
+		The default organization is by name. Types of documents are contained in the same folder to keep them grouped.
+	</strong>
+</div>
+<div id="bucket_list" class="bucket_list">
+	<!--This is where we'll be displaying the products once they're loaded-->
 </div>
 
 <h2>Additional Files</h2>
